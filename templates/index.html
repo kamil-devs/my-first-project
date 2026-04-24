@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do App</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e2;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+      color: #fff;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; }
+
+    /* ── Add form ── */
+    .add-form {
+      background: #1a1a24;
+      border: 1px solid #2e2e40;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .add-form input[name="title"] {
+      flex: 1 1 200px;
+      background: #0f0f13;
+      border: 1px solid #3a3a50;
+      border-radius: 8px;
+      color: #e2e2e2;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .add-form input[name="due_date"] {
+      background: #0f0f13;
+      border: 1px solid #3a3a50;
+      border-radius: 8px;
+      color: #e2e2e2;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .add-form select {
+      background: #0f0f13;
+      border: 1px solid #3a3a50;
+      border-radius: 8px;
+      color: #e2e2e2;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .add-form button {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .add-form button:hover { background: #6366f1; }
+
+    /* ── Filters bar ── */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .filters input[type="search"] {
+      flex: 1 1 180px;
+      background: #1a1a24;
+      border: 1px solid #2e2e40;
+      border-radius: 8px;
+      color: #e2e2e2;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .filters select, .filters a {
+      background: #1a1a24;
+      border: 1px solid #2e2e40;
+      border-radius: 8px;
+      color: #e2e2e2;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.9rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .filters select { appearance: none; }
+    .filters a:hover { background: #2e2e40; }
+    .filters form { display: contents; }
+
+    /* ── Task list ── */
+    .task-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .task {
+      background: #1a1a24;
+      border: 1px solid #2e2e40;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: border-color 0.15s;
+    }
+    .task:hover { border-color: #4a4a60; }
+    .task.done { opacity: 0.45; }
+
+    .priority-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .priority-dot.high   { background: #f87171; box-shadow: 0 0 6px #f87171; }
+    .priority-dot.medium { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+    .priority-dot.low    { background: #34d399; box-shadow: 0 0 6px #34d399; }
+
+    .task-info { flex: 1; min-width: 0; }
+
+    .task-title {
+      font-size: 0.97rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task.done .task-title { text-decoration: line-through; color: #777; }
+
+    .task-meta {
+      font-size: 0.78rem;
+      color: #6b7280;
+      margin-top: 2px;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .badge {
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .badge.high   { background: #3b1a1a; color: #f87171; }
+    .badge.medium { background: #3b2f10; color: #fbbf24; }
+    .badge.low    { background: #0f2e20; color: #34d399; }
+
+    .due { color: #60a5fa; font-size: 0.8rem; }
+
+    .task-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+    .task-actions button {
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .task-actions button:hover { opacity: 0.8; }
+
+    .btn-done   { background: #166534; color: #bbf7d0; }
+    .btn-delete { background: #7f1d1d; color: #fecaca; }
+
+    .empty {
+      text-align: center;
+      color: #555;
+      padding: 2rem 0;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>To-Do App</h1>
+
+    <!-- Add form -->
+    <form class="add-form" action="/add" method="post">
+      <input name="title" type="text" placeholder="New task…" required autocomplete="off" />
+      <input name="due_date" type="date" title="Due date" />
+      <select name="priority">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button type="submit">Add</button>
+    </form>
+
+    <!-- Filters -->
+    <form class="filters" method="get" action="/">
+      <input type="search" name="q" placeholder="Search…" value="{{ query }}" />
+      <select name="priority" onchange="this.form.submit()">
+        <option value="">All priorities</option>
+        {% for p in priorities %}
+        <option value="{{ p }}" {% if filter_priority == p %}selected{% endif %}>{{ p.capitalize() }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="">Default order</option>
+        <option value="priority" {% if sort == 'priority' %}selected{% endif %}>Sort by priority</option>
+      </select>
+      <button type="submit" style="background:#1a1a24;border:1px solid #2e2e40;border-radius:8px;color:#e2e2e2;padding:0.45rem 0.75rem;font-size:0.9rem;cursor:pointer;">Search</button>
+      <a href="/">Clear</a>
+    </form>
+
+    <!-- Task list -->
+    <div class="task-list">
+      {% if tasks %}
+        {% for t in tasks %}
+        <div class="task {% if t.done %}done{% endif %}">
+          <div class="priority-dot {{ t.priority or 'medium' }}"></div>
+          <div class="task-info">
+            <div class="task-title">{{ t.title }}</div>
+            <div class="task-meta">
+              <span class="badge {{ t.priority or 'medium' }}">{{ (t.priority or 'medium').upper() }}</span>
+              {% if t.due_date %}
+              <span class="due">due {{ t.due_date }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="task-actions">
+            {% if not t.done %}
+            <form method="post" action="/done/{{ t.id }}">
+              <button class="btn-done" type="submit">Done</button>
+            </form>
+            {% endif %}
+            <form method="post" action="/delete/{{ t.id }}">
+              <button class="btn-delete" type="submit">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty">No tasks found.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
