@@ -2,10 +2,20 @@ import json
 import os
 import re
 
+from colorama import Fore, Style, init as colorama_init
+
+colorama_init(autoreset=True)
+
 DATA_FILE = os.path.join(os.path.dirname(__file__), "tasks.json")
 
 PRIORITIES = ("high", "medium", "low")
 PRIORITY_ORDER = {p: i for i, p in enumerate(PRIORITIES)}
+
+PRIORITY_COLOR = {
+    "high": Fore.RED,
+    "medium": Fore.YELLOW,
+    "low": Fore.GREEN,
+}
 
 
 def load_tasks():
@@ -24,6 +34,20 @@ def next_id(tasks):
     return max((t["id"] for t in tasks), default=0) + 1
 
 
+def format_task(t):
+    pri = t.get("priority", "medium")
+    color = PRIORITY_COLOR[pri]
+    done = t["done"]
+
+    status = f"{Fore.GREEN}x{Style.RESET_ALL}" if done else " "
+    title = f"{Style.DIM}{t['title']}{Style.RESET_ALL}" if done else f"{color}{t['title']}{Style.RESET_ALL}"
+    pri_tag = f"{color}[{pri}]{Style.RESET_ALL}"
+    due = f"  {Fore.CYAN}due: {t['due_date']}{Style.RESET_ALL}" if t.get("due_date") else ""
+    id_str = f"{Style.BRIGHT}{t['id']}{Style.RESET_ALL}"
+
+    return f"  [{status}] {id_str}. {pri_tag} {title}{due}"
+
+
 def cmd_list(tasks, filter_priority=None, sort_by_priority=False):
     visible = tasks
     if filter_priority:
@@ -31,17 +55,13 @@ def cmd_list(tasks, filter_priority=None, sort_by_priority=False):
     if sort_by_priority:
         visible = sorted(visible, key=lambda t: PRIORITY_ORDER.get(t.get("priority", "medium"), 1))
     if not visible:
-        print("No tasks found.")
+        print(f"{Style.DIM}No tasks found.{Style.RESET_ALL}")
         return
     for t in visible:
-        status = "x" if t["done"] else " "
-        due = f"  due: {t['due_date']}" if t.get("due_date") else ""
-        pri = t.get("priority", "medium")
-        print(f"  [{status}] {t['id']}. [{pri}] {t['title']}{due}")
+        print(format_task(t))
 
 
 def parse_flags(arg):
-    """Extract --due and --priority flags from arg, return (title, due_date, priority)."""
     due_date = None
     priority = "medium"
 
@@ -61,7 +81,7 @@ def parse_flags(arg):
 def cmd_add(tasks, arg):
     title, due_date, priority = parse_flags(arg)
     if not title:
-        print("Error: task title cannot be empty.")
+        print(f"{Fore.RED}Error: task title cannot be empty.{Style.RESET_ALL}")
         return
     task = {
         "id": next_id(tasks),
@@ -72,8 +92,9 @@ def cmd_add(tasks, arg):
     }
     tasks.append(task)
     save_tasks(tasks)
-    due_info = f" (due: {due_date})" if due_date else ""
-    print(f"Added: {task['id']}. [{priority}] {title}{due_info}")
+    color = PRIORITY_COLOR[priority]
+    due_info = f" {Fore.CYAN}(due: {due_date}){Style.RESET_ALL}" if due_date else ""
+    print(f"{Fore.GREEN}Added:{Style.RESET_ALL} {task['id']}. {color}[{priority}]{Style.RESET_ALL} {title}{due_info}")
 
 
 def cmd_due(tasks, task_id, due_date):
@@ -81,9 +102,9 @@ def cmd_due(tasks, task_id, due_date):
         if t["id"] == task_id:
             t["due_date"] = due_date
             save_tasks(tasks)
-            print(f"Set due date for '{t['title']}': {due_date}")
+            print(f"Set due date for '{Fore.CYAN}{t['title']}{Style.RESET_ALL}': {Fore.CYAN}{due_date}{Style.RESET_ALL}")
             return
-    print(f"Error: no task with id {task_id}.")
+    print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
 def cmd_priority(tasks, task_id, priority):
@@ -91,22 +112,23 @@ def cmd_priority(tasks, task_id, priority):
         if t["id"] == task_id:
             t["priority"] = priority
             save_tasks(tasks)
-            print(f"Set priority for '{t['title']}': {priority}")
+            color = PRIORITY_COLOR[priority]
+            print(f"Set priority for '{t['title']}': {color}{priority}{Style.RESET_ALL}")
             return
-    print(f"Error: no task with id {task_id}.")
+    print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
 def cmd_done(tasks, task_id):
     for t in tasks:
         if t["id"] == task_id:
             if t["done"]:
-                print(f"Task {task_id} is already done.")
+                print(f"{Style.DIM}Task {task_id} is already done.{Style.RESET_ALL}")
             else:
                 t["done"] = True
                 save_tasks(tasks)
-                print(f"Marked done: {t['title']}")
+                print(f"{Fore.GREEN}Marked done:{Style.RESET_ALL} {t['title']}")
             return
-    print(f"Error: no task with id {task_id}.")
+    print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
 def cmd_delete(tasks, task_id):
@@ -114,16 +136,16 @@ def cmd_delete(tasks, task_id):
         if t["id"] == task_id:
             removed = tasks.pop(i)
             save_tasks(tasks)
-            print(f"Deleted: {removed['title']}")
+            print(f"{Fore.RED}Deleted:{Style.RESET_ALL} {removed['title']}")
             return
-    print(f"Error: no task with id {task_id}.")
+    print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
-HELP = """
-Commands:
+HELP = f"""
+{Style.BRIGHT}Commands:{Style.RESET_ALL}
   list [--priority LEVEL] [--sort]   Show tasks; filter/sort by priority
   add <title> [--due DATE]           Add a task (DATE: YYYY-MM-DD)
-        [--priority LEVEL]           Priority: high, medium (default), low
+        [--priority LEVEL]           Priority: {Fore.RED}high{Style.RESET_ALL}, {Fore.YELLOW}medium{Style.RESET_ALL} (default), {Fore.GREEN}low{Style.RESET_ALL}
   due <id> <date>                    Set/update due date for a task
   priority <id> <level>              Set/update priority for a task
   done <id>                          Mark a task as done
@@ -141,7 +163,7 @@ def parse_id(token):
 
 
 def run_interactive():
-    print("To-Do App  (type 'help' for commands)")
+    print(f"{Style.BRIGHT}To-Do App{Style.RESET_ALL}  (type 'help' for commands)")
     tasks = load_tasks()
     cmd_list(tasks)
 
@@ -177,7 +199,7 @@ def run_interactive():
             if task_id is None or not date:
                 print("Usage: due <id> <YYYY-MM-DD>")
             elif not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-                print("Error: date must be YYYY-MM-DD.")
+                print(f"{Fore.RED}Error: date must be YYYY-MM-DD.{Style.RESET_ALL}")
             else:
                 cmd_due(tasks, task_id, date)
         elif command == "priority":
@@ -187,7 +209,7 @@ def run_interactive():
             if task_id is None or not level:
                 print("Usage: priority <id> <high|medium|low>")
             elif level not in PRIORITIES:
-                print("Error: priority must be high, medium, or low.")
+                print(f"{Fore.RED}Error: priority must be high, medium, or low.{Style.RESET_ALL}")
             else:
                 cmd_priority(tasks, task_id, level)
         elif command == "done":
