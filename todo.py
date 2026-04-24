@@ -4,6 +4,9 @@ import re
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "tasks.json")
 
+PRIORITIES = ("high", "medium", "low")
+PRIORITY_ORDER = {p: i for i, p in enumerate(PRIORITIES)}
+
 
 def load_tasks():
     if not os.path.exists(DATA_FILE):
@@ -21,36 +24,56 @@ def next_id(tasks):
     return max((t["id"] for t in tasks), default=0) + 1
 
 
-def cmd_list(tasks):
-    if not tasks:
-        print("No tasks yet. Add one with: add <task>")
+def cmd_list(tasks, filter_priority=None, sort_by_priority=False):
+    visible = tasks
+    if filter_priority:
+        visible = [t for t in tasks if t.get("priority", "medium") == filter_priority]
+    if sort_by_priority:
+        visible = sorted(visible, key=lambda t: PRIORITY_ORDER.get(t.get("priority", "medium"), 1))
+    if not visible:
+        print("No tasks found.")
         return
-    for t in tasks:
+    for t in visible:
         status = "x" if t["done"] else " "
         due = f"  due: {t['due_date']}" if t.get("due_date") else ""
-        print(f"  [{status}] {t['id']}. {t['title']}{due}")
+        pri = t.get("priority", "medium")
+        print(f"  [{status}] {t['id']}. [{pri}] {t['title']}{due}")
 
 
-def parse_due_date(arg):
-    """Extract --due YYYY-MM-DD from arg string, return (title, due_date)."""
-    match = re.search(r"--due\s+(\d{4}-\d{2}-\d{2})", arg)
-    if match:
-        due_date = match.group(1)
-        title = arg[: match.start()].strip()
-        return title, due_date
-    return arg.strip(), None
+def parse_flags(arg):
+    """Extract --due and --priority flags from arg, return (title, due_date, priority)."""
+    due_date = None
+    priority = "medium"
+
+    match_due = re.search(r"--due\s+(\d{4}-\d{2}-\d{2})", arg)
+    if match_due:
+        due_date = match_due.group(1)
+        arg = arg[: match_due.start()] + arg[match_due.end():]
+
+    match_pri = re.search(r"--priority\s+(high|medium|low)", arg)
+    if match_pri:
+        priority = match_pri.group(1)
+        arg = arg[: match_pri.start()] + arg[match_pri.end():]
+
+    return arg.strip(), due_date, priority
 
 
 def cmd_add(tasks, arg):
-    title, due_date = parse_due_date(arg)
+    title, due_date, priority = parse_flags(arg)
     if not title:
         print("Error: task title cannot be empty.")
         return
-    task = {"id": next_id(tasks), "title": title, "done": False, "due_date": due_date}
+    task = {
+        "id": next_id(tasks),
+        "title": title,
+        "done": False,
+        "due_date": due_date,
+        "priority": priority,
+    }
     tasks.append(task)
     save_tasks(tasks)
     due_info = f" (due: {due_date})" if due_date else ""
-    print(f"Added: {task['id']}. {title}{due_info}")
+    print(f"Added: {task['id']}. [{priority}] {title}{due_info}")
 
 
 def cmd_due(tasks, task_id, due_date):
@@ -59,6 +82,16 @@ def cmd_due(tasks, task_id, due_date):
             t["due_date"] = due_date
             save_tasks(tasks)
             print(f"Set due date for '{t['title']}': {due_date}")
+            return
+    print(f"Error: no task with id {task_id}.")
+
+
+def cmd_priority(tasks, task_id, priority):
+    for t in tasks:
+        if t["id"] == task_id:
+            t["priority"] = priority
+            save_tasks(tasks)
+            print(f"Set priority for '{t['title']}': {priority}")
             return
     print(f"Error: no task with id {task_id}.")
 
@@ -88,13 +121,15 @@ def cmd_delete(tasks, task_id):
 
 HELP = """
 Commands:
-  list                        Show all tasks
-  add <title> [--due DATE]    Add a task (DATE format: YYYY-MM-DD)
-  due <id> <date>             Set or update due date for a task
-  done <id>                   Mark a task as done
-  delete <id>                 Delete a task
-  help                        Show this message
-  quit                        Exit
+  list [--priority LEVEL] [--sort]   Show tasks; filter/sort by priority
+  add <title> [--due DATE]           Add a task (DATE: YYYY-MM-DD)
+        [--priority LEVEL]           Priority: high, medium (default), low
+  due <id> <date>                    Set/update due date for a task
+  priority <id> <level>              Set/update priority for a task
+  done <id>                          Mark a task as done
+  delete <id>                        Delete a task
+  help                               Show this message
+  quit                               Exit
 """
 
 
@@ -127,7 +162,12 @@ def run_interactive():
         if command in ("quit", "exit", "q"):
             break
         elif command == "list":
-            cmd_list(tasks)
+            filter_pri = None
+            sort_flag = "--sort" in arg
+            match = re.search(r"--priority\s+(high|medium|low)", arg)
+            if match:
+                filter_pri = match.group(1)
+            cmd_list(tasks, filter_priority=filter_pri, sort_by_priority=sort_flag)
         elif command == "add":
             cmd_add(tasks, arg)
         elif command == "due":
@@ -140,6 +180,16 @@ def run_interactive():
                 print("Error: date must be YYYY-MM-DD.")
             else:
                 cmd_due(tasks, task_id, date)
+        elif command == "priority":
+            sub = arg.split(maxsplit=1)
+            task_id = parse_id(sub[0]) if sub else None
+            level = sub[1].strip() if len(sub) > 1 else None
+            if task_id is None or not level:
+                print("Usage: priority <id> <high|medium|low>")
+            elif level not in PRIORITIES:
+                print("Error: priority must be high, medium, or low.")
+            else:
+                cmd_priority(tasks, task_id, level)
         elif command == "done":
             task_id = parse_id(arg)
             if task_id is None:

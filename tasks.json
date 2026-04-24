@@ -3,18 +3,21 @@
     "id": 1,
     "title": "make a weather app",
     "done": false,
-    "due_date": null
+    "due_date": null,
+    "priority": "medium"
   },
   {
     "id": 2,
     "title": "level up the app",
     "done": false,
-    "due_date": null
+    "due_date": null,
+    "priority": "medium"
   },
   {
     "id": 3,
     "title": "eat breakfast",
     "done": true,
-    "due_date": null
+    "due_date": null,
+    "priority": "medium"
   }
 ]
