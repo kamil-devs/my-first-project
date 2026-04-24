@@ -141,9 +141,21 @@ def cmd_delete(tasks, task_id):
     print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
+def cmd_search(tasks, query):
+    query_lower = query.lower()
+    matches = [t for t in tasks if query_lower in t["title"].lower()]
+    if not matches:
+        print(f"{Style.DIM}No tasks match '{query}'.{Style.RESET_ALL}")
+        return
+    print(f"{Style.BRIGHT}Results for '{query}':{Style.RESET_ALL}")
+    for t in matches:
+        print(format_task(t))
+
+
 HELP = f"""
 {Style.BRIGHT}Commands:{Style.RESET_ALL}
   list [--priority LEVEL] [--sort]   Show tasks; filter/sort by priority
+  search <query>                     Search tasks by title
   add <title> [--due DATE]           Add a task (DATE: YYYY-MM-DD)
         [--priority LEVEL]           Priority: {Fore.RED}high{Style.RESET_ALL}, {Fore.YELLOW}medium{Style.RESET_ALL} (default), {Fore.GREEN}low{Style.RESET_ALL}
   due <id> <date>                    Set/update due date for a task
@@ -212,6 +224,11 @@ def run_interactive():
                 print(f"{Fore.RED}Error: priority must be high, medium, or low.{Style.RESET_ALL}")
             else:
                 cmd_priority(tasks, task_id, level)
+        elif command == "search":
+            if not arg:
+                print("Usage: search <query>")
+            else:
+                cmd_search(tasks, arg)
         elif command == "done":
             task_id = parse_id(arg)
             if task_id is None:
