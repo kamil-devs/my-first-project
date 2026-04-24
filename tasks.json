@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "title": "make a weather app",
+    "done": false
+  },
+  {
+    "id": 2,
+    "title": "level up the app",
+    "done": false
+  },
+  {
+    "id": 3,
+    "title": "eat breakfast",
+    "done": true
+  }
+]

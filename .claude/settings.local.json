@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python todo.py)",
+      "Bash(rm /c/Users/kamil/Documents/Projects/my-first-project/tasks.json)"
+    ]
+  }
+}
