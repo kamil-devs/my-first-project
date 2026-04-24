@@ -49,11 +49,12 @@ def format_task(t):
 
 
 def cmd_list(tasks, filter_priority=None, sort_by_priority=False):
-    visible = tasks
+    visible = list(tasks)
     if filter_priority:
-        visible = [t for t in tasks if t.get("priority", "medium") == filter_priority]
+        visible = [t for t in visible if t.get("priority", "medium") == filter_priority]
     if sort_by_priority:
         visible = sorted(visible, key=lambda t: PRIORITY_ORDER.get(t.get("priority", "medium"), 1))
+    visible = sorted(visible, key=lambda t: t["done"])
     if not visible:
         print(f"{Style.DIM}No tasks found.{Style.RESET_ALL}")
         return
@@ -131,6 +132,19 @@ def cmd_done(tasks, task_id):
     print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
 
 
+def cmd_undone(tasks, task_id):
+    for t in tasks:
+        if t["id"] == task_id:
+            if not t["done"]:
+                print(f"{Style.DIM}Task {task_id} is not done yet.{Style.RESET_ALL}")
+            else:
+                t["done"] = False
+                save_tasks(tasks)
+                print(f"{Fore.YELLOW}Unmarked:{Style.RESET_ALL} {t['title']}")
+            return
+    print(f"{Fore.RED}Error: no task with id {task_id}.{Style.RESET_ALL}")
+
+
 def cmd_delete(tasks, task_id):
     for i, t in enumerate(tasks):
         if t["id"] == task_id:
@@ -161,6 +175,7 @@ HELP = f"""
   due <id> <date>                    Set/update due date for a task
   priority <id> <level>              Set/update priority for a task
   done <id>                          Mark a task as done
+  undone <id>                        Unmark a completed task
   delete <id>                        Delete a task
   help                               Show this message
   quit                               Exit
@@ -235,6 +250,12 @@ def run_interactive():
                 print("Usage: done <id>")
             else:
                 cmd_done(tasks, task_id)
+        elif command == "undone":
+            task_id = parse_id(arg)
+            if task_id is None:
+                print("Usage: undone <id>")
+            else:
+                cmd_undone(tasks, task_id)
         elif command == "delete":
             task_id = parse_id(arg)
             if task_id is None:

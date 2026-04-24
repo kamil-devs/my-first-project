@@ -182,6 +182,7 @@
     .task-actions button:hover { opacity: 0.8; }
 
     .btn-done   { background: #166534; color: #bbf7d0; }
+    .btn-undone { background: #3b3010; color: #fbbf24; }
     .btn-delete { background: #7f1d1d; color: #fecaca; }
 
     .empty {
@@ -199,7 +200,7 @@
     <!-- Add form -->
     <form class="add-form" action="/add" method="post">
       <input name="title" type="text" placeholder="New task…" required autocomplete="off" />
-      <input name="due_date" type="date" title="Due date" />
+      <input name="due_date" type="text" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" title="Due date (YYYY-MM-DD)" maxlength="10" />
       <select name="priority">
         <option value="high">High</option>
         <option value="medium" selected>Medium</option>
@@ -244,6 +245,10 @@
             {% if not t.done %}
             <form method="post" action="/done/{{ t.id }}">
               <button class="btn-done" type="submit">Done</button>
+            </form>
+            {% else %}
+            <form method="post" action="/undone/{{ t.id }}">
+              <button class="btn-undone" type="submit">Undo</button>
             </form>
             {% endif %}
             <form method="post" action="/delete/{{ t.id }}">

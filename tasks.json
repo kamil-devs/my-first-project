@@ -4,12 +4,12 @@
     "title": "make a weather app",
     "done": false,
     "due_date": null,
-    "priority": "medium"
+    "priority": "low"
   },
   {
     "id": 2,
     "title": "level up the app",
-    "done": false,
+    "done": true,
     "due_date": null,
     "priority": "medium"
   },
@@ -18,6 +18,13 @@
     "title": "eat breakfast",
     "done": true,
     "due_date": null,
-    "priority": "medium"
+    "priority": "high"
+  },
+  {
+    "id": 4,
+    "title": "math test",
+    "done": false,
+    "due_date": "2026-04-27",
+    "priority": "high"
   }
 ]

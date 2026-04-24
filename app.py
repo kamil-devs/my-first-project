@@ -40,6 +40,7 @@ def index():
         tasks = [t for t in tasks if t.get("priority", "medium") == filter_priority]
     if sort == "priority":
         tasks = sorted(tasks, key=lambda t: PRIORITY_ORDER.get(t.get("priority", "medium"), 1))
+    tasks = sorted(tasks, key=lambda t: t["done"])
 
     return render_template(
         "index.html",
@@ -79,6 +80,17 @@ def done(task_id):
     for t in tasks:
         if t["id"] == task_id:
             t["done"] = True
+            break
+    save_tasks(tasks)
+    return redirect(url_for("index"))
+
+
+@app.route("/undone/<int:task_id>", methods=["POST"])
+def undone(task_id):
+    tasks = load_tasks()
+    for t in tasks:
+        if t["id"] == task_id:
+            t["done"] = False
             break
     save_tasks(tasks)
     return redirect(url_for("index"))
